@@ -238,7 +238,8 @@
     <p>
         Notice that in the images "Sculpture" and "Emir", the color channels still do not line up very well. This can be a result of the scoring metrics, and the effect of the color filters
         on the image. Another way we can align these color channels is to use a very similar technique as before, but to run the image pyramid algorithm on a filtered verion of the original image
-        that only sees edges. To do this, we need to implement a Sobel Filter, which is a filter that results in just the edges in the image. 
+        that only sees edges. This algorithm will let us align the details in the image without looking at the pixel intensities or shading. 
+        To do this, we need to create our own implementation of a Sobel Filter, which is a filter that results in just the edges in the image. 
     </p>
     <p>
         The Sobel edge detection algorithm utilizes two masks. A vertical line mask and a horizontal line mask. The masks are as such: 
@@ -375,6 +376,11 @@
             </tr>
         </table>
     </div>
+    <p>
+        Notice that some images still have slight borders left over. The cropping algorithm can be re-run on these images to find the next closest border to crop off, but this 
+        adjustment needs to be done on a case by case basis as some of the images look fine after one round of cropping. Overall, the cropping is not 100% perfect but does 
+        remove most of the borders from the images as shown. 
+    </p>
 
     <h2>Bells and Whistles - White Balance Adjustment</h2>
     <p>
