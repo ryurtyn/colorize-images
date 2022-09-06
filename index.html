@@ -1,0 +1,427 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <style>
+        div.padded {
+            padding-top: 0px;
+            padding-right: 100px;
+            padding-bottom: 0.25in;
+            padding-left: 100px;
+        }
+    </style>
+    <title>Ruslana Yurtyn | CS 194-26</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+    
+    <h1>Images of the Russian Empire: Colorizing the Prokudin-Gorskii photo collection </h1>
+    <h2 style="color:grey">Ruslana Yurtyn</h2>
+    <hr>
+
+    <div class="padded">
+        
+        <h2>Abstract</h2>
+        <p>
+            Using the collection of glass plate photographs from the Library of Congress’ Prokudin-Gorskii collection, we can use 
+            image processing techniques to produce a single color image from 3 different color channel images. To create the complete 
+            color image, we must first align all of the separate color channels in space. This alignment is needed because the original 
+            images were taken from slightly different positions, so just stacking the 3 color channels yields an image that is not 
+            properly aligned as shown below. 
+        </p>
+        <p>
+            To properly create the full color image, we need to do some preprocessing before stacking the images. More specifically, we need to 
+            align the images such that the features in the image are aligned. There are two initial techniques used for this: Exhaustive Search,
+            and Image Pyramids. We will begin with Exhaustive Search which is the simple, but inefficient technique.  
+        </p>
+        <div align="middle">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="./data/cathedral.jpg" align="middle" width="100px" />
+                        <figcaption align="middle">Cathedral Separate Color Channels</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/cathedral_stack.jpg" align="middle" width="300px" />
+                        <figcaption align="middle">Cathedral Stacked Without Alignment</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <h2>Exhaustive Search</h2>
+
+        <h3>The Algorithm</h3>
+        <p>
+            The general concept of exhaustive search is that we will compare 2 images at a time. One image is kept static, while the other one 
+            is shifted around right, left, up, and down. The amount of shift that is done is user-defined, and in this case I chose to move over a 
+            range of <code>[-15, 15]</code>. As each different shift, a similarity score is calculated. The score can be any metric, but 
+            in this project we explore 2 different methods: Sum of Squared Differences (SSD), and Normalized Cross Correlation (NCC). Using these scores,
+            the best shift is found. We keep one of the color channels static, and align the other 2 channels to that channel. Once the best alignments are 
+            found, the images can be stacked. 
+        </p>
+        <p>    
+            When calculating scoring metrics, we look for values that represent similarity between pixels in some way. 
+            To do this, we need to make sure that there aren't image artifacts that could cause inconsistencies in the score. One such artifact is the borders 
+            on the image. Even if you align the images, the borders are not perfectly aligned because of slightly different framing. To avoid this, we slightly 
+            crop the image before running exhaustive search to eliminate the borders. 
+        </p>
+
+        <h3>Scoring Metric - Sum of Squared Differences (SSD)</h3>
+        <p>
+            SSD gives us a value that represents how different the pixels between two images are, in other words, the pixel variation. 
+            The formula used for this method is <code>sum((image1 - image2)^2)</code>. With this scoring method, a sum of <code>0</code> 
+            indicates that the two images are exactly the same, so we aim to minimize the score. 
+        </p>
+
+        <h3>Scoring Metric - Normalised Cross Correlation (NCC)</h3>
+        <p>
+            NCC gives us a value that represents how correlated the pixels between two images are. The formula for this method is 
+            <code>sum(image1/|image1| * image2/|image2|)</code>. With this scoring method, a higher value means that the pixels are more correlated
+            so we aim to maximize the score. 
+        </p>
+        <h3>Results</h3>
+        <div align="middle">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="./results/cathedral_exhaustive_ssd.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Cathedral SSD <br> Green Shift: [5,2] <br> Red Shift: [12, 3]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/monastery_exhaustive_ssd.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Monastery SSD <br> Green Shift: [-3, 2] <br> Red Shift: [3, 2]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/tobolsk_exhaustive_ssd.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Tobolsk SSD <br> Green Shift: [3, 3] <br> Red Shift: [7, 3]</figcaption>
+                    </td>
+
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./results/cathedral_exhaustive_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Cathedral NCC <br> Green Shift: [5,2] <br> Red Shift: [12, 3] </figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/monastery_exhaustive_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Monastery NCC <br> Green Shift: [-3, 2] <br> Red Shift: [3, 2]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/tobolsk_exhaustive_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Tobolsk NCC <br> Green Shift: [3, 3] <br> Red Shift: [7, 3]</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            As can be seen in the resulting images, SSD and NCC produce more or less indistinguishable results so both metrics are valid for this problem. 
+        </p>
+
+        <h2>Image Pyramid</h2>
+        <h3>The Algorithm</h3>
+        <p>
+            Although exhaustive search works fine on small images of size 64x64, it becomes quite expensive to run on larger images. Searching through an comparing
+            the values of every single pixel takes too long so a more clever method needs to be devised. To do this, we use image pyramids. An image pyramid 
+            leverages the fact that for larger objects in an image, the object will still be visible if we decrease the resolution of the image. We can therefore run
+            the alignment algorithm on a smaller version of the image, and then update that alignment as we scale the image resolution up. 
+        </p>
+        <p>
+            We implement the image pyramid recursively by scaling the image down by a factor of 2 until we reach a size that is comparable to our original jpg images (64x64). 
+            Once we have this smaller image, we can align the images and find the <code>optimal_shift</code>. That <code>optimal_shift</code> becomes the new alignment that we 
+            will use. We the go back up to the next highest layer in the recursion, keeping track of what that value. We shift the image by that shift value, and then re-align the images once again.
+            This alignment can be done on a small portion of the image so that we don't search through all the pixels exhaustively. We then find out what the new shift value is
+            and continue onwards until we reach the highest level. We then have our final <code>optimal_shift</code> and can align the color channels as we did before. 
+        </p>
+        <p>
+            Both scoring methods discussed in the prior section are viable for the Image Pyramid algorithm. We will be using NCC arbitrarily. 
+        </p>
+        
+        <h3>Results</h3>
+        <div align = "middle">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="./results/church_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Church <br> Green Shift: [20, 0] <br> Red Shift: [56, -4]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/three_generations_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Three Generations <br> Green Shift: [36, 12] <br> Red Shift: [92, 12]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/harvesters_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Harvesters <br> Green Shift: [56, 12] <br> Red Shift: [116, 12]</figcaption>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./results/icon_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Icon <br> Green Shift: [40, 16] <br> Red Shift: [88, 20]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/lady_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Lady <br> Green Shift: [44, 4] <br> Red Shift: [92, 8]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/melons_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Melons <br> Green Shift: [68, 7] <br> Red Shift: [156, 12]</figcaption>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./results/onion_church_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Onion Church <br> Green Shift: [44, 24] <br> Red Shift: [100, 28]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/train_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Train <br> Green Shift: [28, 4] <br> Red Shift: [68, 28]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/self_portrait_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Self Portrait <br> Green Shift: [68, 24] <br> Red Shift: [156, 32]</figcaption>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./results/sculpture_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Sculpture <br> Green Shift: [28, -11] <br> Red Shift: [92, -27]</figcaption>
+                    </td>
+                    <td>
+                        <img src="./results/emir_pyramid_ncc.jpg" align="middle" width="250px" />
+                        <figcaption align="middle">Emir <br> Green Shift: [36, 22] <br> Red Shift: [-28, 12]</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            Notice that Emir and Sculpture are not perfectly aligned. This will be fixed later on when we explore the Sobel Edge Detection Algorithm.
+        </p>
+    <h3>My Selected Images</h3>
+    <p>
+        Below are some examples of the algorithm run on selected images from the <a href="https://www.loc.gov/collections/prokudin-gorskii/">photo collection</a>
+    </p>
+    <div align = "middle">
+    <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="./results/sunset_pyramid_ncc.jpg" align="middle" width="250px" />
+                    <figcaption align="middle">Sunset <br> Green Shift: [68, -40] <br> Red Shift: [100, -64]</figcaption>
+                </td>
+                <td>
+                    <img src="./results/siren_pyramid_ncc.jpg" align="middle" width="250px" />
+                    <figcaption align="middle">Siren <br> Green Shift: [48, -5] <br> Red Shift: [84, -24]</figcaption>
+                </td>
+                <td>
+                    <img src="./results/mushroom_pyramid_ncc.jpg" align="middle" width="250px" />
+                    <figcaption align="middle">Mushroom <br> Green Shift: [28, 12] <br> Red Shift: [68, 28]</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="./results/woman_in_building_pyramid_ncc.jpg" align="middle" width="250px" />
+                    <figcaption align="middle">Woman In Building <br> Green Shift: [48, 16] <br> Red Shift: [92, 32]</figcaption>
+                </td>
+                <td>
+                    <img src="./results/poppies_pyramid_ncc.jpg" align="middle" width="250px" />
+                    <figcaption align="middle">Poppies <br> Green Shift: [4, 4] <br> Red Shift: [60, 12]</figcaption>
+                </td>
+                <td>
+                    <img src="./results/lake_pyramid_ncc.jpg" align="middle" width="250px" />
+                    <figcaption align="middle">Lake <br> Green Shift: [36, -16] <br> Red Shift: [92, -29]</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>Bells and Whistles - Alignment Through Edge Detection</h2>
+    <p>
+        Notice that in the images "Sculpture" and "Emir", the color channels still do not line up very well. This can be a result of the scoring metrics, and the effect of the color filters
+        on the image. Another way we can align these color channels is to use a very similar technique as before, but to run the image pyramid algorithm on a filtered verion of the original image
+        that only sees edges. To do this, we need to implement a Sobel Filter, which is a filter that results in just the edges in the image. 
+    </p>
+    <p>
+        The Sobel edge detection algorithm utilizes two masks. A vertical line mask and a horizontal line mask. The masks are as such: 
+    </p>
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="./data/sobel-masks.pbm" align="middle" width="400px" />
+                    <figcaption align="middle">Sobel Mask</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <p>
+        By convolving each mask with the original image, we can create two new images -- one that has the horizontal edges, and one that has the vertical edges. To get the final output of 
+        one image with all the edges, we simply combine the two images together as follows: 
+
+    </p>
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="./data/sobel-combine.png" align="middle" width="400px" />
+                    <figcaption align="middle">Combine Edge Images</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <p>
+        In this formula, <code>G_x</code> is the image with vertical edges, and <code>G_y</code> is the image with horizontal edges. Once the images are combined, we are left with one image that outlines all 
+        the edges in the original image. We can then move on to use this image in our usual image pyramid alignment algorithm to find the optimal shift. An example of the edges detected 
+        is shown below on the Emir image. 
+    </p>
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="./results/emir_as_jpg.jpg" align="middle" width="400px" />
+                    <figcaption align="middle">Emir Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/emir_filtered_sobel.jpg" align="middle" width="400px" />
+                    <figcaption align="middle">Emir Edges Only</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <p>
+        Now we only have the lines outlining the details on the image. We can then run our alignment algorithm 
+        on just these edges, and it will be able to tell if the shapes in the image match up regardless of the colors or intensity of the pixel values. 
+    </p>
+    <h3>Results with Edge Detection</h3>
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="./results/emir_pyramid_ncc.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Emir Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/sobel_emir.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Emir With Sobel Filter</figcaption>
+                </td>
+
+            </tr>
+            <tr>
+                <td>
+                    <img src="./results/sculpture_pyramid_ncc.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Sculpture Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/sobel_sculpture.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Sculpture With Sobel Filter</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <p>
+        It can clearly be seen that aligning based on the edges for these particular images greatly improved the final results of the composite image. 
+    </p>
+
+    <h2> Bells and Whistles - Border Cropping</h2>
+    <p>
+        Notice that many of the images still have borders left over due to the shifting that happened during alignment. We can fix these artifacts by implementing a cropping algorithm. 
+        To crop the images, we can search for horizontal and vertical edges. We start from each edge of the image (left, right, top, bottom), and for each side respectively, we shift a mask over 
+        until we find a line. Once a line is found, the amount of shift is recorded, and the image can then be cropped to that line. 
+    </p>
+    <p>
+        Examples are shown below of cropped images.
+    </p>
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="./results/sobel_emir.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Emir Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/sobel_emir_crop.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Emir Cropped</figcaption>
+                </td>
+
+            </tr>
+            <tr>
+                <td>
+                    <img src="./results/poppies_pyramid_ncc.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Poppies Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/sobel_poppies_cropped.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Poppies Cropped</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="./results/sobel_sculpture.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Sculpture Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/sobel_sculpture_cropped.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Sculpture Cropped</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="./results/sunset_pyramid_ncc.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Sunset Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/sobel_sunset_cropped.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Sunset Cropped</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>Bells and Whistles - White Balance Adjustment</h2>
+    <p>
+        Some of the images have a tint that is not the natural shade of the image. We can adjust the color by following the Grey World model. We can force average color of scene to grey
+        by computing the mean color over the entire image, and scaling the average color to be grey. The adjusted images are shown below.
+    </p>
+    <div align="middle">
+        <table style="width=100%">
+            <tr>
+                <td>
+                    <img src="./results/sobel_siren_cropped.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Siren Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/siren_white_balanced.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Siren White Balanced</figcaption>
+                </td>
+
+            </tr>
+            <tr>
+                <td>
+                    <img src="./results/sobel_mushrooom_cropped.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Mushroom Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/mushroom_white_balanced.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Mushroom White Balanced</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img src="./results/sobel_poppies_cropped.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Poppies Original</figcaption>
+                </td>
+                <td>
+                    <img src="./results/poppies_white_balanced.jpg" align="middle" width="300px" />
+                    <figcaption align="middle">Poppies White Balanced</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h3>References</h3>
+    <ul>http://www.adeveloperdiary.com/data-science/computer-vision/how-to-implement-sobel-edge-detection-using-python-from-scratch/</ul>
+    <ul>https://coderspacket.com/sobel-edge-detection-from-scratch-using-python</ul>
+
+
+    </div>
+</body>
+</html>
